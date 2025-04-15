@@ -1,0 +1,53 @@
+{
+  "name": "outbox-connector1",
+  "config": {
+    // Debezium PostgreSQL connector class
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+
+    // Logical decoding plugin
+    "plugin.name": "pgoutput",
+
+    // Number of tasks (keep 1 for outbox pattern)
+    "tasks.max": "1",
+
+    // Database connection info
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "postgres",
+    "database.password": "postgres",
+    "database.dbname": "mydb",
+
+    // Kafka topic naming
+    "topic.prefix": "outboxserver",
+
+    // Schema and table to include
+    "schema.include.list": "outbox",
+    "table.include.list": "outbox.events",
+
+    // List of transformations to apply in order
+    "transforms": "unwrap,extractAggregateId,extractFlatKey,moveFieldsToHeader,onlyPayload",
+
+    // 1. Unwrap Debezium envelope and drop tombstones
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.drop.tombstones": "true",
+    "transforms.unwrap.delete.handling.mode": "drop",
+
+    // 2. Use `aggregate_id` field from payload as Kafka message key
+    "transforms.extractAggregateId.type": "org.apache.kafka.connect.transforms.ValueToKey",
+    "transforms.extractAggregateId.fields": "aggregate_id",
+
+    // 3. Extract the value of `aggregate_id` to use it as flat string key (instead of JSON)
+    "transforms.extractFlatKey.type": "org.apache.kafka.connect.transforms.ExtractField$Key",
+    "transforms.extractFlatKey.field": "aggregate_id",
+
+    // 4. Move the `type` field from value to Kafka headers as "Message-Type"
+    "transforms.moveFieldsToHeader.type": "org.apache.kafka.connect.transforms.HeaderFrom$Value",
+    "transforms.moveFieldsToHeader.fields": "type",
+    "transforms.moveFieldsToHeader.headers": "Message-Type",
+    "transforms.moveFieldsToHeader.operation": "move",
+
+    // 5. Extract the `payload` field as the Kafka message value (drop metadata)
+    "transforms.onlyPayload.type": "org.apache.kafka.connect.transforms.ExtractField$Value",
+    "transforms.onlyPayload.field": "payload"
+  }
+}
