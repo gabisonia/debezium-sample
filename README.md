@@ -84,45 +84,61 @@ curl -X POST http://localhost:8083/connectors \
   }'
 ```
 
-With Transforms
+## Register the Debezium Connector with Transforms (using curl)
 ```bash
 curl --location 'http://localhost:8083/connectors' \
 --header 'Content-Type: application/json' \
 --data '{
   "name": "outbox-connector1",
   "config": {
+    
     "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+
+    
     "plugin.name": "pgoutput",
+
+    
     "tasks.max": "1",
+
+    
     "database.hostname": "postgres",
     "database.port": "5432",
     "database.user": "postgres",
     "database.password": "postgres",
     "database.dbname": "mydb",
+
+    
     "topic.prefix": "outboxserver",
+
+    
     "schema.include.list": "outbox",
     "table.include.list": "outbox.events",
 
-    "transforms": "unwrap,extractAggregateId,renameKeyField,moveFieldsToHeader,onlyPayload",
+    
+    "transforms": "unwrap,extractAggregateId,extractFlatKey,moveFieldsToHeader,onlyPayload",
 
-"transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
-"transforms.unwrap.drop.tombstones": "true",
-"transforms.unwrap.delete.handling.mode": "drop",
+    
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.drop.tombstones": "true",
+    "transforms.unwrap.delete.handling.mode": "drop",
 
-"transforms.extractAggregateId.type": "org.apache.kafka.connect.transforms.ValueToKey",
-"transforms.extractAggregateId.fields": "aggregate_id",
+    
+    "transforms.extractAggregateId.type": "org.apache.kafka.connect.transforms.ValueToKey",
+    "transforms.extractAggregateId.fields": "aggregate_id",
 
-"transforms.renameKeyField.type": "org.apache.kafka.connect.transforms.ReplaceField$Key",
-"transforms.renameKeyField.renames": "aggregate_id:id",
+    
+    "transforms.extractFlatKey.type": "org.apache.kafka.connect.transforms.ExtractField$Key",
+    "transforms.extractFlatKey.field": "aggregate_id",
 
-"transforms.moveFieldsToHeader.type": "org.apache.kafka.connect.transforms.HeaderFrom$Value",
-"transforms.moveFieldsToHeader.fields": "type",
-"transforms.moveFieldsToHeader.headers": "Message-Type",
-"transforms.moveFieldsToHeader.operation": "move",
+    
+    "transforms.moveFieldsToHeader.type": "org.apache.kafka.connect.transforms.HeaderFrom$Value",
+    "transforms.moveFieldsToHeader.fields": "type",
+    "transforms.moveFieldsToHeader.headers": "Message-Type",
+    "transforms.moveFieldsToHeader.operation": "move",
 
-"transforms.onlyPayload.type": "org.apache.kafka.connect.transforms.ExtractField$Value",
-"transforms.onlyPayload.field": "payload"
-
+    
+    "transforms.onlyPayload.type": "org.apache.kafka.connect.transforms.ExtractField$Value",
+    "transforms.onlyPayload.field": "payload"
   }
 }'
 ```
